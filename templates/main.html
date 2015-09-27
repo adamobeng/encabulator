@@ -1,0 +1,56 @@
+<html><body>
+		<div id="mapdiv"></div>
+		<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<script>
+			map = new OpenLayers.Map("mapdiv");
+			map.addLayer(new OpenLayers.Layer.OSM());
+
+		var lonLat = new OpenLayers.LonLat(-74.00594, 40.71278)
+		.transform(
+				new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+				map.getProjectionObject() // to Spherical Mercator Projection
+			  );
+
+	var zoom=16;
+
+	var markers = new OpenLayers.Layer.Markers( "Markers" );
+	map.addLayer(markers);
+
+	$.getJSON('http://localhost:5000/api/prediction',
+		function(data) {
+			console.log(data);
+		current = new OpenLayers.LonLat(data[0]['location'][0], data[0]['location'][1])
+		.transform(
+			new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+			map.getProjectionObject() // to Spherical Mercator Projection
+		  );
+		markers.addMarker(new OpenLayers.Marker(current));
+		map.setCenter (current, zoom);
+		p = new OpenLayers.Popup('c', current, new OpenLayers.Size(40,30),
+				'<span style="color:green"><strong>' + data[0]['avg'] + '</strong></span>', false);
+		p.setBackgroundColor('#ffffff');
+		map.addPopup(p);
+	});
+
+	$.getJSON('http://localhost:5000/api/better',
+		function(data) {
+			$.each(data, function(i,d) { 
+				current = new OpenLayers.LonLat(d['location'][0], d['location'][1]);
+				current.transform(
+							new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+							map.getProjectionObject() // to Spherical Mercator Projection
+						  );
+				marker = new OpenLayers.Marker(current);
+				marker.setOpacity(d.avg)
+				markers.addMarker(marker);
+				p = new OpenLayers.Popup('c', current, new OpenLayers.Size(40,30),
+					'<span style="color:red"><strong>' + d['avg'] + '</strong></span>', false);
+				p.setBackgroundColor('#ffffff');
+				map.addPopup(p);
+			}
+			);
+	});
+
+		</script>
+	</body></html>
